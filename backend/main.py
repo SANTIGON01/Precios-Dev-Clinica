@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import historico, simulador, comparador, oportunidades, reportes
+from app.api.routes import historico, simulador, comparador, oportunidades, reportes, dashboard
 
 app = FastAPI(
     title="Sistema de Análisis y Negociación de Precios",
@@ -23,6 +23,7 @@ app.include_router(simulador.router, prefix="/api/v1/simulador", tags=["simulado
 app.include_router(comparador.router, prefix="/api/v1/comparador", tags=["comparador"])
 app.include_router(oportunidades.router, prefix="/api/v1/oportunidades", tags=["oportunidades"])
 app.include_router(reportes.router, prefix="/api/v1/reportes", tags=["reportes"])
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 
 @app.get("/")
 def read_root():

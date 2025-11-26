@@ -189,3 +189,22 @@ export interface ReporteItem {
     CantidadAnual: number;
     FacturacionAnual: number;
 }
+
+export interface KPIItem {
+    FacturacionAnual: number;
+    FacturacionMensual: number;
+    VariacionMensual: number;
+    OportunidadTotalAnual: number;
+}
+
+export interface TopOSItem {
+    ObraSocial: string;
+    Facturacion: number;
+    Ordenes: number;
+}
+
+export interface EvolucionMensualItem {
+    Anio: number;
+    Mes: number;
+    Facturacion: number;
+}

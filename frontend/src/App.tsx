@@ -4,10 +4,8 @@ import { Historico } from '@/pages/Historico';
 import { Simulador } from '@/pages/Simulador';
 import { Comparador } from '@/pages/Comparador';
 import { Oportunidades } from '@/pages/Oportunidades';
-
-// Placeholder components for routes
-const Dashboard = () => <h1 className="text-2xl font-bold">Dashboard</h1>;
-const Reportes = () => <h1 className="text-2xl font-bold">Generador de Reportes</h1>;
+import { Reportes } from '@/pages/Reportes';
+import { Dashboard } from '@/pages/Dashboard';
 
 function App() {
   return (

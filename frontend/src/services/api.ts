@@ -12,7 +12,10 @@ import {
     MixFacturacionItem,
     OportunidadPrecioItem,
     OportunidadModalidadItem,
-    ReporteItem
+    ReporteItem,
+    KPIItem,
+    TopOSItem,
+    EvolucionMensualItem
 } from '@/types';
 
 const API_URL = 'http://localhost:8000/api/v1';
@@ -115,6 +118,23 @@ export const reportesService = {
             params,
             responseType: 'blob'
         });
+        return response.data;
+    }
+};
+
+export const dashboardService = {
+    getKPIs: async () => {
+        const response = await api.get<KPIItem>('/dashboard/kpis');
+        return response.data;
+    },
+
+    getTopOS: async () => {
+        const response = await api.get<TopOSItem[]>('/dashboard/top-os');
+        return response.data;
+    },
+
+    getEvolucionMensual: async () => {
+        const response = await api.get<EvolucionMensualItem[]>('/dashboard/evolucion');
         return response.data;
     }
 };
