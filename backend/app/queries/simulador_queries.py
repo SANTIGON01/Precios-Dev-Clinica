@@ -1,4 +1,5 @@
 # S1: Impacto de Cambio de Coeficiente
+# S1: Impacto de Cambio de Coeficiente
 QUERY_S1_IMPACTO_COEFICIENTE = """
 WITH PracticasAfectadas AS (
     -- Obtener todas las prácticas que usan esta unidad
@@ -67,91 +68,56 @@ TasaUsoActual AS (
         AND P1.PrDEstado = ' '
         AND P1.PrDFechaPrac >= DATEADD(month, -3, GETDATE())
     GROUP BY LTRIM(RTRIM(P1.PrDPractica))
+),
+
+SimulacionCalculada AS (
+    SELECT 
+        PA.*,
+        ISNULL(TU.UsoMesActual, 0) AS UsoMesActual,
+        ISNULL(TU.UsoPromedioMensual, 0) AS UsoPromedioMensual,
+        
+        -- Calcular Precio Nuevo una sola vez
+        CASE 
+            WHEN PA.TUHonorarios = ?
+            THEN (PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)
+            
+            WHEN PA.TUGastos = ?
+            THEN (PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)
+            
+            ELSE PA.PrecioActual
+        END AS PrecioNuevo
+        
+    FROM PracticasAfectadas PA
+        LEFT JOIN TasaUsoActual TU ON TU.NNCodigo = PA.NNCodigo
+    WHERE PA.rn = 1
 )
 
 SELECT 
-    PA.NNCodigo,
-    PA.Practica,
-    PA.Rubro,
-    PA.TipoPrecio,
-    
-    -- Unidades
-    PA.UnidadesHonorarios,
-    PA.UnidadesGastos,
-    
-    -- Coeficientes
-    PA.CoefActualHon,
-    PA.CoefActualGas,
+    NNCodigo,
+    Practica,
+    Rubro,
+    TipoPrecio,
+    UnidadesHonorarios,
+    UnidadesGastos,
+    CoefActualHon,
+    CoefActualGas,
     ? AS CoeficienteNuevo,
-    
-    -- Precio actual
-    PA.PrecioActual,
-    
-    -- Precio con coeficiente nuevo
-    CASE 
-        WHEN PA.TUHonorarios = ?
-        THEN (PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)
-        
-        WHEN PA.TUGastos = ?
-        THEN (PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)
-        
-        ELSE PA.PrecioActual
-    END AS PrecioNuevo,
+    PrecioActual,
+    PrecioNuevo,
     
     -- Diferencia
-    CASE 
-        WHEN PA.TUHonorarios = ?
-        THEN ((PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)) - PA.PrecioActual
-        
-        WHEN PA.TUGastos = ?
-        THEN ((PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)) - PA.PrecioActual
-        
-        ELSE 0
-    END AS DiferenciaPrecio,
+    (PrecioNuevo - PrecioActual) AS DiferenciaPrecio,
     
-    -- Tasa de uso
-    ISNULL(TU.UsoMesActual, 0) AS UsoMesActual,
-    ISNULL(TU.UsoPromedioMensual, 0) AS UsoPromedioMensual,
+    UsoMesActual,
+    UsoPromedioMensual,
     
     -- Impacto económico
-    CASE 
-        WHEN PA.TUHonorarios = ?
-        THEN (((PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)) - PA.PrecioActual) * ISNULL(TU.UsoMesActual, 0)
-        
-        WHEN PA.TUGastos = ?
-        THEN (((PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)) - PA.PrecioActual) * ISNULL(TU.UsoMesActual, 0)
-        
-        ELSE 0
-    END AS ImpactoMensual,
-    
-    -- Impacto anual proyectado
-    CASE 
-        WHEN PA.TUHonorarios = ?
-        THEN (((PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)) - PA.PrecioActual) * ISNULL(TU.UsoPromedioMensual, 0) * 12
-        
-        WHEN PA.TUGastos = ?
-        THEN (((PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)) - PA.PrecioActual) * ISNULL(TU.UsoPromedioMensual, 0) * 12
-        
-        ELSE 0
-    END AS ImpactoAnualProyectado
+    (PrecioNuevo - PrecioActual) * UsoMesActual AS ImpactoMensual,
+    (PrecioNuevo - PrecioActual) * UsoPromedioMensual * 12 AS ImpactoAnualProyectado
 
-FROM PracticasAfectadas PA
-    LEFT JOIN TasaUsoActual TU ON TU.NNCodigo = PA.NNCodigo
+FROM SimulacionCalculada
 
-WHERE PA.rn = 1
-
-ORDER BY 
-    ABS(
-        CASE 
-            WHEN PA.TUHonorarios = ?
-            THEN (((PA.UnidadesHonorarios * ?) + (PA.UnidadesGastos * PA.CoefActualGas)) - PA.PrecioActual) * ISNULL(TU.UsoMesActual, 0)
-            
-            WHEN PA.TUGastos = ?
-            THEN (((PA.UnidadesHonorarios * PA.CoefActualHon) + (PA.UnidadesGastos * ?)) - PA.PrecioActual) * ISNULL(TU.UsoMesActual, 0)
-            
-            ELSE 0
-        END
-    ) DESC;
+ORDER BY ABS((PrecioNuevo - PrecioActual) * UsoMesActual) DESC;
 """
 
 # S2: Simular Cambio de Tipo (S -> N)

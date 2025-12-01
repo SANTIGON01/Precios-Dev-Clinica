@@ -66,6 +66,13 @@ def comparar_coeficientes(
     try:
         # Format the list for IN clause
         unidades_list = unidades.split(',')
+        
+        # Validate input to prevent SQL Injection
+        import re
+        for u in unidades_list:
+            if not re.match(r'^[a-zA-Z0-9]+$', u.strip()):
+                raise HTTPException(status_code=400, detail=f"Invalid unit code: {u}")
+                
         placeholders = ','.join([f"'{u.strip()}'" for u in unidades_list])
         
         query = comparador_queries.QUERY_C1_COMPARAR_COEFICIENTES.format(unidades_list=placeholders)

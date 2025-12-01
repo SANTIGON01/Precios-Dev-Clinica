@@ -65,10 +65,10 @@ export const Dashboard = () => {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                <p className="text-muted-foreground">
-                    Visión general del rendimiento y oportunidades del negocio.
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard General</h1>
+                <p className="text-slate-500 mt-2 text-lg">
+                    Visión estratégica del rendimiento y oportunidades de negocio.
                 </p>
             </div>
 

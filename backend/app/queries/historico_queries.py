@@ -45,69 +45,76 @@ ORDER BY P.PrcFVig ASC;
 
 # H2: Historial de Coeficientes de una Unidad
 QUERY_H2_COEFICIENTES_HISTORICO = """
-WITH CoeficientesHistoricos AS (
+WITH CoeficientesRaw AS (
+    -- Honorarios
     SELECT 
         P.PrcFVig AS Fecha,
         P.NNCodigo,
-        N.NNAbreviada AS Practica,
-        
-        -- Extraer coeficiente de honorarios (si es tipo N)
+        T.TUHonorarios AS Unidad,
         CASE 
-            WHEN P.PrcFEsImporte = 'N' 
-                 AND (N.NNHonEspec + (N.NNHonAyudante * N.NNCantAyudantes) + N.NNHonPerfus) > 0
-                 AND LTRIM(RTRIM(T.TUHonorarios)) NOT IN ('', 'PESO')
-            THEN ROUND(P.PrcFHono / (N.NNHonEspec + (N.NNHonAyudante * N.NNCantAyudantes) + N.NNHonPerfus), 2)
+            WHEN (N.NNHonEspec + (N.NNHonAyudante * N.NNCantAyudantes) + N.NNHonPerfus) > 0
+            THEN P.PrcFHono / (N.NNHonEspec + (N.NNHonAyudante * N.NNCantAyudantes) + N.NNHonPerfus)
             ELSE NULL
-        END AS CoefHonorarios,
-        
-        -- Extraer coeficiente de gastos (si es tipo N)
-        CASE 
-            WHEN P.PrcFEsImporte = 'N' 
-                 AND N.NNGastos > 0
-                 AND LTRIM(RTRIM(T.TUGastos)) NOT IN ('', 'PESO')
-            THEN ROUND(P.PrcFGast / N.NNGastos, 2)
-            ELSE NULL
-        END AS CoefGastos,
-        
-        T.TUHonorarios AS UnidadHonorarios,
-        T.TUGastos AS UnidadGastos
-
+        END AS Coeficiente
     FROM PRECIOSVIG P WITH(NOLOCK)
         INNER JOIN NOMENCLADOR N WITH(NOLOCK) ON P.NNCodigo = N.NNCodigo
         INNER JOIN TIPOUNID T WITH(NOLOCK) ON T.TUCodigo = N.NNTipoUnidad
-    
     WHERE 
         P.OSCodigo = ?
         AND P.SubTpoCod = ?
-        AND P.PrcFEsImporte = 'N'  -- Solo nomencladores
+        AND P.PrcFEsImporte = 'N'
         AND P.PrcFVig >= ?
         AND P.PrcFVig <= ?
+        AND LTRIM(RTRIM(T.TUHonorarios)) NOT IN ('', 'PESO')
+
+    UNION ALL
+
+    -- Gastos
+    SELECT 
+        P.PrcFVig AS Fecha,
+        P.NNCodigo,
+        T.TUGastos AS Unidad,
+        CASE 
+            WHEN N.NNGastos > 0
+            THEN P.PrcFGast / N.NNGastos
+            ELSE NULL
+        END AS Coeficiente
+    FROM PRECIOSVIG P WITH(NOLOCK)
+        INNER JOIN NOMENCLADOR N WITH(NOLOCK) ON P.NNCodigo = N.NNCodigo
+        INNER JOIN TIPOUNID T WITH(NOLOCK) ON T.TUCodigo = N.NNTipoUnidad
+    WHERE 
+        P.OSCodigo = ?
+        AND P.SubTpoCod = ?
+        AND P.PrcFEsImporte = 'N'
+        AND P.PrcFVig >= ?
+        AND P.PrcFVig <= ?
+        AND LTRIM(RTRIM(T.TUGastos)) NOT IN ('', 'PESO')
 )
 
 SELECT 
     Fecha,
-    UnidadHonorarios AS Unidad,
-    AVG(CoefHonorarios) AS CoeficientePromedio,
-    MIN(CoefHonorarios) AS CoeficienteMinimo,
-    MAX(CoefHonorarios) AS CoeficienteMaximo,
+    Unidad,
+    ROUND(AVG(Coeficiente), 2) AS CoeficientePromedio,
+    ROUND(MIN(Coeficiente), 2) AS CoeficienteMinimo,
+    ROUND(MAX(Coeficiente), 2) AS CoeficienteMaximo,
     COUNT(*) AS CantidadPracticas,
     
     -- Cambio vs mes anterior
-    AVG(CoefHonorarios) - LAG(AVG(CoefHonorarios)) OVER (ORDER BY Fecha) AS Cambio,
+    ROUND(AVG(Coeficiente) - LAG(AVG(Coeficiente)) OVER (ORDER BY Fecha), 2) AS Cambio,
     
     -- Porcentaje de cambio
     CASE 
-        WHEN LAG(AVG(CoefHonorarios)) OVER (ORDER BY Fecha) > 0
+        WHEN LAG(AVG(Coeficiente)) OVER (ORDER BY Fecha) > 0
         THEN ROUND(
-            (AVG(CoefHonorarios) - LAG(AVG(CoefHonorarios)) OVER (ORDER BY Fecha)) * 100.0 /
-            LAG(AVG(CoefHonorarios)) OVER (ORDER BY Fecha)
+            (AVG(Coeficiente) - LAG(AVG(Coeficiente)) OVER (ORDER BY Fecha)) * 100.0 /
+            LAG(AVG(Coeficiente)) OVER (ORDER BY Fecha)
         , 2)
         ELSE NULL
     END AS PorcentajeCambio
 
-FROM CoeficientesHistoricos
-WHERE UnidadHonorarios = ?
-GROUP BY Fecha, UnidadHonorarios
+FROM CoeficientesRaw
+WHERE LTRIM(RTRIM(Unidad)) = ?
+GROUP BY Fecha, Unidad
 ORDER BY Fecha ASC;
 """
 

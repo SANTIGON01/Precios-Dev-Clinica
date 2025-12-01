@@ -58,10 +58,11 @@ def get_historial_coeficientes(
     try:
         cursor.execute(
             historico_queries.QUERY_H2_COEFICIENTES_HISTORICO,
-            os_codigo,
-            sub_tpo_cod,
-            fecha_desde,
-            fecha_hasta,
+            # Params for Honorarios part
+            os_codigo, sub_tpo_cod, fecha_desde, fecha_hasta,
+            # Params for Gastos part
+            os_codigo, sub_tpo_cod, fecha_desde, fecha_hasta,
+            # Param for filtering Unit
             unidad
         )
         

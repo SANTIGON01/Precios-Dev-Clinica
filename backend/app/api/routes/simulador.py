@@ -54,56 +54,21 @@ def simular_cambio_coeficiente(
     try:
         # The query has many placeholders for the same parameters.
         # We need to provide them in the correct order.
-        # Params order in QUERY_S1_IMPACTO_COEFICIENTE:
-        # 1. OSCodigo (WHERE clause)
-        # 2. TUHonorarios (WHERE clause)
-        # 3. TUGastos (WHERE clause)
-        # 4. PrCObraSocial (TasaUsoActual subquery)
-        # 5. CoeficienteNuevo (SELECT list)
-        # 6. TUHonorarios (CASE WHEN)
-        # 7. CoeficienteNuevo (CASE WHEN)
-        # 8. TUGastos (CASE WHEN)
-        # 9. CoeficienteNuevo (CASE WHEN)
-        # ... and so on.
-        
-        # This is error prone with ? placeholders.
-        # Ideally we should use named parameters if pyodbc supports it well, or careful ordering.
-        # Let's count them carefully.
-        
-        # 1. P.OSCodigo = ?
-        # 2. LTRIM(RTRIM(T.TUHonorarios)) = ?
-        # 3. LTRIM(RTRIM(T.TUGastos)) = ?
-        # 4. P.PrCObraSocial = ?
-        # 5. ? AS CoeficienteNuevo
-        # 6. PA.TUHonorarios = ?
-        # 7. PA.UnidadesHonorarios * ?
-        # 8. PA.TUGastos = ?
-        # 9. PA.UnidadesGastos * ?
-        # 10. PA.TUHonorarios = ?
-        # 11. PA.UnidadesHonorarios * ?
-        # 12. PA.TUGastos = ?
-        # 13. PA.UnidadesGastos * ?
-        # 14. PA.TUHonorarios = ?
-        # 15. PA.UnidadesHonorarios * ?
-        # 16. PA.TUGastos = ?
-        # 17. PA.UnidadesGastos * ?
-        # 18. PA.TUHonorarios = ?
-        # 19. PA.UnidadesHonorarios * ?
-        # 20. PA.TUGastos = ?
-        # 21. PA.UnidadesGastos * ?
-        # 22. PA.TUHonorarios = ?
-        # 23. PA.UnidadesHonorarios * ?
-        # 24. PA.TUGastos = ?
-        # 25. PA.UnidadesGastos * ?
+        # Params order in New QUERY_S1_IMPACTO_COEFICIENTE:
+        # 1. OSCodigo (WHERE)
+        # 2. TUHonorarios (WHERE)
+        # 3. TUGastos (WHERE)
+        # 4. PrCObraSocial (TasaUso)
+        # 5. TUHonorarios (CASE WHEN)
+        # 6. CoeficienteNuevo (CASE WHEN)
+        # 7. TUGastos (CASE WHEN)
+        # 8. CoeficienteNuevo (CASE WHEN)
+        # 9. CoeficienteNuevo (SELECT list)
         
         params = [
             os_codigo, unidad, unidad, os_codigo,
-            coeficiente_nuevo,
             unidad, coeficiente_nuevo, unidad, coeficiente_nuevo,
-            unidad, coeficiente_nuevo, unidad, coeficiente_nuevo,
-            unidad, coeficiente_nuevo, unidad, coeficiente_nuevo,
-            unidad, coeficiente_nuevo, unidad, coeficiente_nuevo,
-            unidad, coeficiente_nuevo, unidad, coeficiente_nuevo
+            coeficiente_nuevo
         ]
         
         cursor.execute(simulador_queries.QUERY_S1_IMPACTO_COEFICIENTE, params)
